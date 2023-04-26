@@ -1,9 +1,41 @@
 import os,random,array
 from openpyxl import load_workbook, Workbook
 import pandas as pd
-
+from cryptography.fernet import Fernet
+def generateKey():
+    if os.path.isfile('masterKey.key'):
+        print('\nYou already have a key')
+        input('Press a key to continue...\n')
+    else:
+        key = Fernet.generate_key()
+        with open('masterKey.key', 'wb') as filekey:
+            filekey.write(key)
+def encryptFile():
+    try:
+        with open('masterKey.key', 'rb') as filekey:
+            key = filekey.read()
+        fernet = Fernet(key)
+        with open('passwords.xlsx', 'rb') as file:
+            original = file.read()
+        encrypted = fernet.encrypt(original)
+        with open('passwords.xlsx', 'wb') as encrypted_file:
+            encrypted_file.write(encrypted)
+    except:
+        return
+def decryptFile():
+    try:
+        with open('masterKey.key', 'rb') as filekey:
+            key = filekey.read()
+        fernet = Fernet(key)
+        with open('passwords.xlsx', 'rb') as enc_file:
+            encrypted = enc_file.read()
+        decrypted = fernet.decrypt(encrypted)
+        with open('passwords.xlsx', 'wb') as dec_file:
+            dec_file.write(decrypted)
+    except:
+        return
 def listPasswords():
-
+    decryptFile()
     myFileName=r'passwords.xlsx'
     wb = load_workbook(filename=myFileName)
     ws = wb['Sheet']
@@ -11,6 +43,7 @@ def listPasswords():
         print("No password in the list\n")
         return
     print(f"{pd.read_excel(myFileName)}\n\n")
+    encryptFile()
     input("Press Enter to return to menu...\n")
 def getInput():
     while True:
@@ -22,6 +55,7 @@ def getInput():
         except:
             print("wrong input try again")
 def addPassword():
+    decryptFile()
     myFileName=r'passwords.xlsx'
     wb = load_workbook(filename=myFileName)
     ws = wb['Sheet']
@@ -32,7 +66,9 @@ def addPassword():
     ws.cell(column=3,row=newRowLocation, value=myInput[2])
     wb.save(filename=myFileName)
     wb.close()
+    encryptFile()
 def createXlsxFile():
+    decryptFile()
     filepath = "passwords.xlsx"
     colnames = ['Website', 'Username', 'Password']
     wb = Workbook()
@@ -45,8 +81,9 @@ def createXlsxFile():
     ws.cell(column=3,row=1, value=colnames[2])
     wb.save(filename=filepath)
     wb.close()
+    encryptFile()
 def deletePassword():
-
+    decryptFile()
     myFileName=r'passwords.xlsx'
     wb = load_workbook(filename=myFileName)
     ws = wb['Sheet']
@@ -65,9 +102,9 @@ def deletePassword():
             wb.close()
     except:
         print("Must be a positive integer\n")
-
+    encryptFile()
 def findPassword():
-
+    decryptFile()
     myFileName=r'passwords.xlsx'
     wb = load_workbook(filename=myFileName)
     ws = wb['Sheet']
@@ -81,9 +118,10 @@ def findPassword():
         for cell in row:
             if cell.value == passYouWant:
                 print(f"{ws.cell(row=cell.row, column=1).value} : {ws.cell(row=cell.row, column=2).value} : {ws.cell(row=cell.row, column=3).value}")
+    encryptFile()
     input("\nPress a key to continue...")
 def generatePassword():
-
+    decryptFile()
     try:
         website = input("Enter website: ")
         username= input("Enter Username: ")
@@ -126,6 +164,7 @@ def generatePassword():
     ws.cell(column=3,row=newRowLocation, value=password)
     wb.save(filename=myFileName)
     wb.close()
+    encryptFile()
 def menu():
     try:
         choice = int(input("1. List all passwords\n2. Add a password\n3. Delete a password\n4. Find a password\n5. Generate and add password\n6. Exit\n\ninput:"))
@@ -150,13 +189,16 @@ def menu():
 def start():
 
     while True:
-        if os.path.isfile('passwords.xlsx'):
+        if os.path.isfile('passwords.xlsx') and os.path.isfile('masterkey.key'):
             start=menu()
             if start == 1:
                 print("bye")
                 break
         else:
-            createXlsxFile()
-
+            if os.path.isfile('passwords.xlsx')==False:
+                createXlsxFile()
+            if os.path.isfile('masterkey.key') == False:
+                generateKey()
+                encryptFile()
 if __name__ == "__main__":
     start()
