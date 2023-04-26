@@ -112,7 +112,7 @@ def findPassword():
     wb = load_workbook(filename=myFileName)
     ws = wb['Sheet']
     if ws.max_row == 1:
-        print(colored("No password in the list to delete\n","red"))
+        print(colored("No password in the list to find\n","red"))
         return
 
     passYouWant= input(colored("\n\nEnter the website, username, or password:","light_grey",attrs=['reverse', 'blink']))
