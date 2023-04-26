@@ -1,11 +1,14 @@
-import os,random,array
+import os,random,array,json,getpass
 from openpyxl import load_workbook, Workbook
 import pandas as pd
 from cryptography.fernet import Fernet
+from hashlib import sha256
+from termcolor import colored
+
 def generateKey():
     if os.path.isfile('masterKey.key'):
-        print('\nYou already have a key')
-        input('Press a key to continue...\n')
+        print(colored('\nYou already have a key',"red"))
+        input(colored('Press a key to continue...\n',"dark_grey",attrs=['reverse', 'blink']))
     else:
         key = Fernet.generate_key()
         with open('masterKey.key', 'wb') as filekey:
@@ -40,20 +43,20 @@ def listPasswords():
     wb = load_workbook(filename=myFileName)
     ws = wb['Sheet']
     if ws.max_row == 1:
-        print("No password in the list\n")
+        print(colored("No password in the list\n","red"))
         return
     print(f"{pd.read_excel(myFileName)}\n\n")
     encryptFile()
-    input("Press Enter to return to menu...\n")
+    input(colored('Press a key to continue...\n',"dark_grey",attrs=['reverse', 'blink']))
 def getInput():
     while True:
         try:
-            website = input("Enter website/name for the password i.e., 'google account': ")
-            username= input("Enter Username: ")
-            password= input("Enter Password: ")
+            website = input(colored("Enter website/name for the password i.e., 'google account': ","light_grey",attrs=['reverse', 'blink']))
+            username= input(colored("Enter Username: ","light_grey",attrs=['reverse', 'blink']))
+            password= input(colored("Enter Password: ","light_grey",attrs=['reverse', 'blink']))
             return [website,username,password]
         except:
-            print("wrong input try again")
+            print(colored("wrong input try again","red"))
 def addPassword():
     decryptFile()
     myFileName=r'passwords.xlsx'
@@ -89,19 +92,19 @@ def deletePassword():
     ws = wb['Sheet']
 
     if ws.max_row == 1:
-        print("No password in the list to delete\n")
+        print(colored("No password in the list to delete\n","red"))
         return
     try:
-        row=int(input("Enter the row number of the password you wish to delete: "))+2
+        row=int(input(colored("Enter the row number of the password you wish to delete: ","light_grey",attrs=['reverse', 'blink'])))+2
         if row <2 :
-            print("Row number can't be below 0\n")
+            print(colored("Row number can't be below 0\n","red"))
             return
         else:
             ws.delete_rows(row,1)
             wb.save(filename=myFileName)
             wb.close()
     except:
-        print("Must be a positive integer\n")
+        print(colored("Must be a positive integer\n","green"))
     encryptFile()
 def findPassword():
     decryptFile()
@@ -109,26 +112,26 @@ def findPassword():
     wb = load_workbook(filename=myFileName)
     ws = wb['Sheet']
     if ws.max_row == 1:
-        print("No password in the list to delete\n")
+        print(colored("No password in the list to delete\n","red"))
         return
 
-    passYouWant= input("\n\nEnter the website, username, or password:")
-    print('\nWebsite : Username : Password')
+    passYouWant= input(colored("\n\nEnter the website, username, or password:","light_grey",attrs=['reverse', 'blink']))
+    print(colored('\nWebsite : Username : Password',"light_grey",attrs=["reverse","blink"]))
     for row in ws.iter_cols(1):
         for cell in row:
             if cell.value == passYouWant:
                 print(f"{ws.cell(row=cell.row, column=1).value} : {ws.cell(row=cell.row, column=2).value} : {ws.cell(row=cell.row, column=3).value}")
     encryptFile()
-    input("\nPress a key to continue...")
+    input(colored('\nPress a key to continue...\n',"dark_grey",attrs=['reverse', 'blink']))
 def generatePassword():
     decryptFile()
     try:
-        website = input("Enter website: ")
-        username= input("Enter Username: ")
-        MAX_LEN = int(input("Length of the password: "))
+        website = input(colored("Enter website: ","light_grey",attrs=['reverse', 'blink']))
+        username= input(colored("Enter Username: ","light_grey",attrs=['reverse', 'blink']))
+        MAX_LEN = int(input(colored("Length of the password: ","light_grey",attrs=['reverse', 'blink'])))
         print("\n\n")
     except:
-        print("Invalid input\n")
+        print(colored("Invalid input\n","red"))
 
     DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     LOCASE_CHARACTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
@@ -165,9 +168,42 @@ def generatePassword():
     wb.save(filename=myFileName)
     wb.close()
     encryptFile()
+def setPassword():
+    print(colored("\nWe will have to setup a master password. This password is unrecoverable","light_grey",attrs=["reverse","blink"]))
+    master_password = getpass.getpass("Create a master password for the program: ")
+    second_input = getpass.getpass("Verify your master pasword: ")
+    if master_password == second_input:
+        hash_master = sha256(master_password.encode("utf-8")).hexdigest()
+        jfile = {"Master": {}}
+        jfile["Master"] = hash_master
+        with open("masterpassword.json", 'w') as jsondata:
+            json.dump(jfile, jsondata, sort_keys=True, indent=4)
+        print(colored("Password set successfully, ","green"))
+    else:
+        print(colored("Passwords do not match. Please try again","red"))
+        return
+def verifyPassword():
+        if os.path.isfile("masterpassword.json"):
+            with open("masterpassword.json", 'r') as masterPassword:
+                jfile = json.load(masterPassword)
+
+            stored_master_pass = jfile["Master"]
+            try:
+                master_password = getpass.getpass(colored("Enter Your Master Password: ","dark_grey",attrs=['reverse', 'blink']))
+            except:
+                print(colored("\nInvalid input","red"))
+                return False
+
+            if sha256(master_password.encode("utf-8")).hexdigest() == stored_master_pass:
+                print(colored("Master password is correct",color="green"))
+                return True
+            else:
+                print(colored("Master password is incorrect",color="red"))
+                return False
+
 def menu():
     try:
-        choice = int(input("1. List all passwords\n2. Add a password\n3. Delete a password\n4. Find a password\n5. Generate and add password\n6. Exit\n\ninput:"))
+        choice = int(input(colored("\n1. List all passwords\n2. Add a password\n3. Delete a password\n4. Find a password\n5. Generate and add password\n6. Exit\n\ninput:","dark_grey",attrs=["reverse"])))
         print("\n\n")
         if 1<=choice<=6:
             if choice == 1:
@@ -187,18 +223,23 @@ def menu():
     except:
         print("Invalid choice")
 def start():
-
+    loggedIn=False
     while True:
-        if os.path.isfile('passwords.xlsx') and os.path.isfile('masterkey.key'):
-            start=menu()
-            if start == 1:
-                print("bye")
-                break
+        if os.path.isfile('passwords.xlsx') and os.path.isfile('masterkey.key') and os.path.isfile("masterpassword.json"):
+            if loggedIn ==False:
+                loggedIn=verifyPassword()
+            else:
+                start=menu()
+                if start == 1:
+                    print(colored("bye","light_grey",attrs=["reverse","blink"]))
+                    break
         else:
             if os.path.isfile('passwords.xlsx')==False:
                 createXlsxFile()
             if os.path.isfile('masterkey.key') == False:
                 generateKey()
                 encryptFile()
+            if os.path.isfile("masterpassword.json")==False:
+                setPassword()
 if __name__ == "__main__":
     start()
