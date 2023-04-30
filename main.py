@@ -200,7 +200,6 @@ def verifyPassword():
             else:
                 print(colored("Master password is incorrect",color="red"))
                 return False
-
 def menu():
     try:
         choice = int(input(colored("\n1. List all passwords\n2. Add a password\n3. Delete a password\n4. Find a password\n5. Generate and add password\n6. Exit\n\ninput:","dark_grey",attrs=["reverse"])))
